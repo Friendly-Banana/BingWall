@@ -502,11 +502,11 @@ void MainWindow::delete_wallpaper(QString filePath) {
 }
 
 void MainWindow::apply_wallpaper(QString filePath) {
-  // little hack to check if file was passed with exetension suffix.
-  // if not try to guess the file name by apending possible suffixes
-  if (filePath.split("/").last().contains(".") == false) {
+  // little hack to check if file was passed with extension suffix.
+  // if not try to guess the file name by appending possible suffixes
+  if (!filePath.split("/").last().contains(".")) {
     filePath = filePath + ".jpg";
-    if (QFileInfo(filePath).exists() == false)
+    if (!QFileInfo(filePath).exists())
       filePath = filePath + ".png";
   }
 
@@ -528,10 +528,18 @@ void MainWindow::apply_wallpaper(QString filePath) {
     picture_uri = "picture-uri";
   }
 
-  gsettings->start("gsettings", QStringList()
-                                    << "set"
-                                    << "org.gnome.desktop.background"
-                                    << picture_uri << "file://" + filePath);
+  QString desktop = qgetenv("XDG_CURRENT_DESKTOP");
+  if (desktop == "MATE") {
+    gsettings->start("gsettings", QStringList()
+                                      << "set"
+                                      << "org.mate.background"
+                                      << "picture-filename" << filePath);
+  } else {
+    gsettings->start("gsettings", QStringList()
+                                      << "set"
+                                      << "org.gnome.desktop.background"
+                                      << picture_uri << "file://" + filePath);
+  }
   if (!gsettings->waitForFinished()) {
     qDebug() << "GSETTINGS:Process failed:" << gsettings->errorString();
   } else {
